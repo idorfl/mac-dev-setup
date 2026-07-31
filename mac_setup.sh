@@ -1,13 +1,17 @@
 #!/bin/zsh
-TXT_INV="\033[7m"
-TXT_RESET="\033[0m"
-CHAR_DONE="\u2714"
-CHAR_FAIL="\u2716"
-LIGHT_BLUE="\033[38;5;33m"
-LIGHT_RED="\033[38;5;196m"
 
-CHAR_DONE="$LIGHT_BLUE$CHAR_DONE$TXT_RESET"
-CHAR_FAIL="$LIGHT_RED$CHAR_FAIL$TXT_RESET"
+# Strict mode
+set -euo pipefail
+
+readonly TXT_INV="\033[7m"
+readonly TXT_RESET="\033[0m"
+readonly CHAR_DONE="\u2714"
+readonly CHAR_FAIL="\u2716"
+readonly LIGHT_BLUE="\033[38;5;33m"
+readonly LIGHT_RED="\033[38;5;196m"
+
+readonly SIGN_DONE="$LIGHT_BLUE$CHAR_DONE$TXT_RESET"
+readonly SIGN_FAIL="$LIGHT_RED$CHAR_FAIL$TXT_RESET"
 
 # -------------------------------------------------
 
@@ -66,9 +70,9 @@ syntax on
 filetype plugin indent on
 
 END_FILE
-echo $CHAR_DONE  "~/.vimrc created"
+echo $SIGN_DONE  "~/.vimrc created"
 else
-  echo $CHAR_DONE  "~/.vimrc exists"
+  echo $SIGN_DONE  "~/.vimrc exists"
 fi
 }
 
@@ -81,13 +85,13 @@ print_installing() {
 # -------------------------------------------------
 
 print_installed() {
-  echo $CHAR_DONE "$1 installed"
+  echo $SIGN_DONE "$1 installed"
 }
 
 # -------------------------------------------------
 
 print_installation_failed() {
-  echo $CHAR_FAIL "$1 installation failed"
+  echo $SIGN_FAIL "$1 installation failed"
 }
 
 # -------------------------------------------------
@@ -104,9 +108,9 @@ install_command() {
 
   if ! "$test_cmd_fn" "$command_name"; then
     print_installing "$display_name"
+    "$@"
     if "$test_cmd_fn" "$command_name"; then
       print_installed "$display_name"
-      "$@"
     else
       print_installation_failed "$display_name"
       exit 1
@@ -152,11 +156,11 @@ install_python() {
   install_command "$python_version" "$display_name" check_python\
     uv python install "$python_version" --default --preview-features python-install-default
   # This needs to be tested first perhaps
-  if !  echo $PATH | grep -q '.local/bin' 2>/dev/null; then
+  if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
     uv python update-shell
   fi
   if ! grep -q '.local/bin' ~/.zprofile 2> /dev/null; then
-    echo 'export PATH="/Users/lukas/.local/bin:$PATH"' >> ~/.zprofile
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zprofile
   fi
 }
 

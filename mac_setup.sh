@@ -10,17 +10,66 @@ readonly CHAR_FAIL="\u2716"
 readonly LIGHT_BLUE="\033[38;5;33m"
 readonly LIGHT_RED="\033[38;5;196m"
 
-readonly SIGN_DONE="$LIGHT_BLUE$CHAR_DONE$TXT_RESET"
-readonly SIGN_FAIL="$LIGHT_RED$CHAR_FAIL$TXT_RESET"
+readonly ICON_DONE="$LIGHT_BLUE$CHAR_DONE$TXT_RESET"
+readonly ICON_FAIL="$LIGHT_RED$CHAR_FAIL$TXT_RESET"
 
 # -------------------------------------------------
 
-create_vimrc() {
-if [ ! -f ~/.vimrc ]; then
+print_installing() {
+  printf '%b\n' "Installing $1..."
+}
 
-echo "Creating ~/.vimrc..."
+# -------------------------------------------------
 
-cat >~/.vimrc<<END_FILE
+print_installed() {
+  printf '%b\n' "$ICON_DONE $1 installed"
+}
+
+# -------------------------------------------------
+
+print_installation_failed() {
+  printf '%b\n' "$ICON_FAIL $1 installation failed"
+}
+
+# -------------------------------------------------
+
+print_verification_failed() {
+  printf '%b\n' "$ICON_FAIL $1 installation completed, but verification failed"
+}
+
+# -------------------------------------------------
+
+check_command() {
+  command -v "$1" &>/dev/null;
+}
+
+install_command() {
+  local command_name=$1
+  local display_name=$2
+  local test_cmd_fn=$3
+  shift 3
+
+  if ! "$test_cmd_fn" "$command_name"; then
+    print_installing "$display_name"
+    if ! "$@"; then
+      print_installation_failed "$display_name"
+      exit 1
+    fi
+    if "$test_cmd_fn" "$command_name"; then
+      print_installed "$display_name"
+    else
+      print_verification_failed "$display_name"
+      exit 1
+    fi
+  else
+    print_installed "$display_name"
+  fi
+}
+
+# -------------------------------------------------
+
+write_vimrc() {
+  cat >"$1"<<END_FILE
 set nocompatible
 
 " UI
@@ -70,61 +119,24 @@ syntax on
 filetype plugin indent on
 
 END_FILE
-echo $SIGN_DONE  "~/.vimrc created"
-else
-  echo $SIGN_DONE  "~/.vimrc exists"
-fi
 }
 
 # -------------------------------------------------
 
-print_installing() {
-  echo "Installing $1..."
+check_file() {
+  [[ -f "$1" ]]
 }
 
-# -------------------------------------------------
-
-print_installed() {
-  echo $SIGN_DONE "$1 installed"
-}
-
-# -------------------------------------------------
-
-print_installation_failed() {
-  echo $SIGN_FAIL "$1 installation failed"
-}
-
-# -------------------------------------------------
-
-check_command() {
-  command -v "$1" &>/dev/null;
-}
-
-install_command() {
-  local command_name=$1
-  local display_name=$2
-  local test_cmd_fn=$3
-  shift 3
-
-  if ! "$test_cmd_fn" "$command_name"; then
-    print_installing "$display_name"
-    "$@"
-    if "$test_cmd_fn" "$command_name"; then
-      print_installed "$display_name"
-    else
-      print_installation_failed "$display_name"
-      exit 1
-    fi
-  else
-    print_installed "$display_name"
-  fi
+install_vimrc() {
+  local vimrc="$1"
+  install_command "$vimrc" "~/.vimrc" check_file write_vimrc "$vimrc"
 }
 
 # -------------------------------------------------
 
 brew_install() {
   local command_name=$1
-  local package_name=$2
+  local package_name="${2:-$1}"
   install_command "/opt/homebrew/bin/$command_name" "$package_name"\
     check_command brew install --no_ask "$package_name"
 }
@@ -168,7 +180,7 @@ install_python() {
 
 echo
 echo "============================================================="
-echo "$TXT_INV MacOS Development Environment Bootstrap (For Apple Silicon) $TXT_RESET"
+printf '%b\n' "$TXT_INV MacOS Development Environment Bootstrap (For Apple Silicon) $TXT_RESET"
 echo "============================================================="
 echo
 
@@ -186,7 +198,7 @@ fi
 # ~/.vimrc
 # -------------------------------------------------
 
-create_vimrc
+install_vimrc "$HOME/.vimrc"
 
 # -------------------------------------------------
 # Xcode Command Line Tools
@@ -222,17 +234,17 @@ fi
 # Tools
 # -------------------------------------------------
 
-brew_install "vim" "vim"
-brew_install "wget" "wget"
+brew_install "vim"
+brew_install "wget"
 brew_install "rg" "ripgrep"
-brew_install "git" "git"
-brew_install "gh" "gh"
-brew_install "jq" "jq"
-brew_install "lazygit" "lazygit"
-brew_install "fzf" "fzf"
-brew_install "node" "node"
-brew_install "uv" "uv"
-brew_install "rtk" "rtk"
+brew_install "git"
+brew_install "gh"
+brew_install "jq"
+brew_install "lazygit"
+brew_install "fzf"
+brew_install "node"
+brew_install "uv"
+brew_install "rtk"
 
 # -------------------------------------------------
 # Programming Languages
@@ -255,9 +267,9 @@ install_vscode_extension "ms-python.python"
 install_vscode_extension "rust-lang.rust-analyzer"
 
 echo
-echo "================================="
-echo "Bootstrap completed successfully"
-echo "================================="
+echo "=================================="
+echo " Bootstrap completed successfully "
+echo "=================================="
 echo
 echo "Next steps:"
 echo "- Set a Git username and e-mail"

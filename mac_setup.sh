@@ -167,7 +167,6 @@ install_python() {
   local display_name="Python $python_version"
   install_command "$python_version" "$display_name" check_python\
     uv python install "$python_version" --default --preview-features python-install-default
-  # This needs to be tested first perhaps
   if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
     uv python update-shell
   fi
@@ -220,13 +219,17 @@ fi
 # Homebrew
 # -------------------------------------------------
 
-install_command "brew" "Homebrew" check_command\
+check_brew() {
+  command -v "/opt/homebrew/bin/brew" &>/dev/null;
+}
+
+install_command "brew" "Homebrew" check_brew\
   bash -c 'curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh | /bin/bash'
 
 if ! grep -q 'homebrew' ~/.zprofile 2> /dev/null; then
   echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
 fi
-if [[ $HOMEBREW_PREFIX == :: ]]; then
+if ! check_command brew; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 

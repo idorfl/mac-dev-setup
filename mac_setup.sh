@@ -254,7 +254,7 @@ echo
 echo "================================="
 echo "Bootstrap completed successfully"
 echo "================================="
-echo 
+echo
 echo "Next steps:"
 echo "- Set a Git username and e-mail"
 echo "  git config --global user.name \"Mona Lisa\""

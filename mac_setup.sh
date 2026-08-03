@@ -134,11 +134,15 @@ install_vimrc() {
 
 # -------------------------------------------------
 
+check_brew() {
+  [[ -x "/opt/homebrew/bin/$1" ]]
+}
+
 brew_install() {
   local command_name=$1
   local package_name="${2:-$1}"
-  install_command "/opt/homebrew/bin/$command_name" "$package_name"\
-    check_command brew install --no_ask "$package_name"
+  install_command "$command_name" "$package_name"\
+    check_brew brew install --no_ask "$package_name"
 }
 
 # -------------------------------------------------
@@ -219,10 +223,6 @@ fi
 # Homebrew
 # -------------------------------------------------
 
-check_brew() {
-  command -v "/opt/homebrew/bin/brew" &>/dev/null;
-}
-
 install_command "brew" "Homebrew" check_brew\
   bash -c 'curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh | /bin/bash'
 
@@ -248,6 +248,7 @@ brew_install "fzf"
 brew_install "node"
 brew_install "uv"
 brew_install "rtk"
+brew_install "apfel"
 
 # -------------------------------------------------
 # Programming Languages
@@ -269,6 +270,35 @@ install_vscode_extension "ms-vscode.cmake-tools"
 install_vscode_extension "ms-python.python"
 install_vscode_extension "rust-lang.rust-analyzer"
 
+# -------------------------------------------------
+# oMLX
+# -------------------------------------------------
+
+if ! check_brew "omlx"; then
+  brew tap jundot/omlx https://github.com/jundot/omlx
+  brew trust jundot/omlx
+fi
+brew_install "omlx"
+
+# -------------------------------------------------
+# Ollama
+# -------------------------------------------------
+
+brew_install "ollama"
+
+# -------------------------------------------------
+# LLM Harness - codex, claude, opencode
+# -------------------------------------------------
+
+install_command "codex" "Codex CLI" check_command\
+  brew install --cask codex
+
+install_command "claude" "Claude Code CLI" check_command\
+  brew install --cask claude-code
+
+brew_install "opencode"
+
+# -------------------------------------------------
 echo
 echo "=================================="
 echo " Bootstrap completed successfully "

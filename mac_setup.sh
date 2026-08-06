@@ -13,16 +13,24 @@ readonly LIGHT_RED="\033[38;5;196m"
 readonly ICON_DONE="$LIGHT_BLUE$CHAR_DONE$TXT_RESET"
 readonly ICON_FAIL="$LIGHT_RED$CHAR_FAIL$TXT_RESET"
 
+CHECK_ONLY=true
+
 # -------------------------------------------------
 
 print_installing() {
-  printf '%b\n' "Installing $1..."
+  echo "Installing $1..."
 }
 
 # -------------------------------------------------
 
 print_installed() {
   printf '%b\n' "$ICON_DONE $1 installed"
+}
+
+# -------------------------------------------------
+
+print_not_installed() {
+  printf '%b\n' "$ICON_FAIL $1 not installed"
 }
 
 # -------------------------------------------------
@@ -39,6 +47,13 @@ print_verification_failed() {
 
 # -------------------------------------------------
 
+print_installing_group() {
+  echo
+  echo ">>> Group $1 <<<"
+}
+
+# -------------------------------------------------
+
 check_command() {
   command -v "$1" &>/dev/null;
 }
@@ -49,7 +64,12 @@ install_command() {
   local test_cmd_fn=$3
   shift 3
 
+
   if ! "$test_cmd_fn" "$command_name"; then
+    if [[ "$CHECK_ONLY" == true ]]; then
+      print_not_installed "$display_name"
+      return
+    fi
     print_installing "$display_name"
     if ! "$@"; then
       print_installation_failed "$display_name"
@@ -64,6 +84,23 @@ install_command() {
   else
     print_installed "$display_name"
   fi
+}
+
+# -------------------------------------------------
+
+install_group() {
+  local last_check_only="$CHECK_ONLY"
+  local group_name="$1"
+  if [[ "$2" == true ]]; then
+    CHECK_ONLY=false
+  else
+    CHECK_ONLY=true
+  fi
+  shift 2
+  print_installing_group "$group_name"
+  "$@"
+  echo
+  CHECK_ONLY="$last_check_only"
 }
 
 # -------------------------------------------------
@@ -148,7 +185,7 @@ brew_install() {
 # -------------------------------------------------
 
 check_extension() {
-  code --list-extensions | grep -q "$1"
+  code --list-extensions | grep -qx "$1"
 }
 
 install_vscode_extension() {
@@ -181,6 +218,32 @@ install_python() {
 
 # -------------------------------------------------
 
+usage() {
+  cat <<'EOF'
+Usage: mac_setup.sh [OPTIONS]
+
+Bootstrap a macOS development environment on Apple Silicon.
+The packages are installed from Homebrew where possible.
+Python is installed via uv.
+
+Options:
+  --help, -h      Show this help message and exit
+  --tools         Install tools like vim, wget, git, etc.
+  --languages     Install Python and Rust
+  --ai-tools      Install AI tools (omlx, ollama, codex, claude-code, opencode)
+  --vscode        Install VS Code and extensions
+
+Groups are additive. Without the options the following is installed by default:
+  ~/.vimrc
+  Xcode Command Line Tools
+  Homebrew
+
+Modify the script in accordance with your needs (the group_* functions).
+EOF
+}
+
+# -------------------------------------------------
+
 echo
 echo "============================================================="
 printf '%b\n' "$TXT_INV MacOS Development Environment Bootstrap (For Apple Silicon) $TXT_RESET"
@@ -198,6 +261,35 @@ if [[ $(uname -m) != "arm64" ]]; then
 fi
 
 # -------------------------------------------------
+# Parse Parameters
+# -------------------------------------------------
+
+OPT_TOOLS=false
+OPT_LANGUAGES=false
+OPT_VSCODE=false
+OPT_AI_TOOLS=false
+OPT_ALL=false
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --tools)     OPT_TOOLS=true;     shift ;;
+    --languages) OPT_LANGUAGES=true; shift ;;
+    --vscode)    OPT_VSCODE=true;    shift ;;
+    --ai-tools)  OPT_AI_TOOLS=true;  shift ;;
+    --all)       OPT_ALL=true;       shift ;;
+    --help|-h)   usage; exit 0 ;;
+    *) echo "Unknown parameter: $1\nUse --help for list of supported parameters"; exit 1 ;;
+  esac
+done
+
+if [[ "$OPT_ALL" == true ]]; then
+  OPT_TOOLS=true
+  OPT_VSCODE=true
+  OPT_LANGUAGES=true
+  OPT_AI_TOOLS=true
+fi
+
+# -------------------------------------------------
 # ~/.vimrc
 # -------------------------------------------------
 
@@ -207,7 +299,7 @@ install_vimrc "$HOME/.vimrc"
 # Xcode Command Line Tools
 # -------------------------------------------------
 
-xcode_cmd_tools="Xcode Command Line Tool"
+xcode_cmd_tools="Xcode Command Line Tools"
 
 if ! xcode-select -p &>/dev/null; then
     print_installing "$xcode_cmd_tools"
@@ -237,66 +329,77 @@ fi
 # Tools
 # -------------------------------------------------
 
-brew_install "vim"
-brew_install "wget"
-brew_install "rg" "ripgrep"
-brew_install "git"
-brew_install "gh"
-brew_install "jq"
-brew_install "lazygit"
-brew_install "fzf"
-brew_install "node"
-brew_install "uv"
-brew_install "rtk"
-brew_install "apfel"
+group_tools() {
+  brew_install "vim"
+  brew_install "wget"
+  brew_install "rg" "ripgrep"
+  brew_install "git"
+  brew_install "gh"
+  brew_install "jq"
+  brew_install "lazygit"
+  brew_install "fzf"
+  brew_install "node"
+  brew_install "uv"
+}
+
+install_group "Tools" "$OPT_TOOLS" group_tools
 
 # -------------------------------------------------
 # Programming Languages
 # -------------------------------------------------
 
-install_command "rustc" "Rust" check_command\
-  bash -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
-install_python "3.13"
+group_languages() {
+  install_command "rustc" "Rust" check_command\
+    bash -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+  install_python "3.13"
+}
+
+install_group "Languages" "$OPT_LANGUAGES" group_languages
 
 # -------------------------------------------------
-# Applications
+# VS Code
 # -------------------------------------------------
 
-install_command "code" "Visual Studio Code" check_command\
-  brew install --cask visual-studio-code
+group_vscode() {
+  install_command "code" "Visual Studio Code" check_command\
+    brew install --cask visual-studio-code
 
-install_vscode_extension "ms-vscode.cpptools-extension-pack"
-install_vscode_extension "ms-vscode.cmake-tools"
-install_vscode_extension "ms-python.python"
-install_vscode_extension "rust-lang.rust-analyzer"
+  install_vscode_extension "ms-vscode.cpptools-extension-pack"
+  install_vscode_extension "ms-vscode.cmake-tools"
+  install_vscode_extension "ms-python.python"
+  install_vscode_extension "rust-lang.rust-analyzer"
+}
 
-# -------------------------------------------------
-# oMLX
-# -------------------------------------------------
-
-if ! check_brew "omlx"; then
-  brew tap jundot/omlx https://github.com/jundot/omlx
-  brew trust jundot/omlx
-fi
-brew_install "omlx"
+install_group "VS Code" "$OPT_VSCODE" group_vscode
 
 # -------------------------------------------------
-# Ollama
+# AI Tools
 # -------------------------------------------------
 
-brew_install "ollama"
+group_ai_tools() {
+  brew_install "rtk"
+  brew_install "apfel"
 
-# -------------------------------------------------
-# LLM Harness - codex, claude, opencode
-# -------------------------------------------------
+  if ! check_brew "omlx"; then
+    brew tap jundot/omlx https://github.com/jundot/omlx
+    brew trust jundot/omlx
+  fi
+  brew_install "omlx"
 
-install_command "codex" "Codex CLI" check_command\
-  brew install --cask codex
+  brew_install "ollama"
 
-install_command "claude" "Claude Code CLI" check_command\
-  brew install --cask claude-code
+  install_command "codex" "Codex CLI" check_command\
+    brew install --cask codex
 
-brew_install "opencode"
+  install_command "claude" "Claude Code CLI" check_command\
+    brew install --cask claude-code
+
+  brew_install "opencode"
+
+  brew_install "pi" "pi-coding-agent"
+}
+
+install_group "AI Tools" "$OPT_AI_TOOLS" group_ai_tools
 
 # -------------------------------------------------
 echo

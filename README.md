@@ -9,10 +9,6 @@ Bootstrap a macOS development environment on Apple Silicon.
 
 ## Usage
 
-```zsh
-curl -fsSL https://raw.githubusercontent.com/lukzs12/mac-dev-setup/main/install.sh | zsh
-```
-
 Or clone and run locally:
 
 ```zsh
@@ -21,11 +17,26 @@ cd mac-dev-setup
 ./mac_setup.sh
 ```
 
+### Options
+
+The script supports modular installation via group flags. Run `./mac_setup.sh --help` to see all options.
+
+| Flag | Description |
+|------|-------------|
+| `--tools` | CLI tools (vim, wget, git, node, etc.) |
+| `--languages` | Programming languages (Rust, Python) |
+| `--vscode` | VS Code and extensions |
+| `--ai-tools` | AI tools (Ollama, Codex, Claude Code, etc.) |
+| `--all` | Install everything |
+| `--help` | Show help and exit |
+
+Without any flags, only `~/.vimrc`, Xcode CLI Tools, and Homebrew are installed.
+
 ## What gets installed
 
 ### CLI tools
 
-vim, wget, ripgrep, git, gh (GitHub CLI), jq, lazygit, fzf, node, uv (Python package manager), rtk, apfel
+vim, wget, ripgrep, git, gh (GitHub CLI), jq, lazygit, fzf, node, uv (Python package manager)
 
 ### Programming languages
 
@@ -46,7 +57,10 @@ Visual Studio Code with extensions:
 - Claude Code CLI
 - OpenCode
 - Ollama
-- oMLX
+- Omlx
+- rtk
+- apfel
+- pi (pi-coding-agent)
 
 ## Post-install
 
@@ -58,7 +72,11 @@ git config --global user.email "you@example.com"
 gh auth login
 ```
 
-Ensure `~/.local/bin` is on your PATH (the script adds it to `~/.zprofile`).
+The script configures the following in `~/.zprofile`:
+- Homebrew shellenv (`eval $(/opt/homebrew/bin/brew shellenv)`)
+- Python local bin PATH (`export PATH="$HOME/.local/bin:$PATH"`)
+
+Run `source ~/.zprofile` or restart your terminal to apply.
 
 ## Notes
 

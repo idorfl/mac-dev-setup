@@ -12,7 +12,7 @@ Bootstrap a macOS development environment on Apple Silicon.
 Or clone and run locally:
 
 ```zsh
-git clone https://github.com/lukzs12/mac-dev-setup.git
+git clone https://github.com/idorfl/mac-dev-setup.git
 cd mac-dev-setup
 ./mac_setup.sh
 ```

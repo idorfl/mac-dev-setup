@@ -64,7 +64,6 @@ install_command() {
   local test_cmd_fn=$3
   shift 3
 
-
   if ! "$test_cmd_fn" "$command_name"; then
     if [[ "$CHECK_ONLY" == true ]]; then
       print_not_installed "$display_name"
@@ -210,6 +209,7 @@ install_python() {
     uv python install "$python_version" --default --preview-features python-install-default
   if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
     uv python update-shell
+    export PATH="$HOME/.local/bin:$PATH"
   fi
   if ! grep -q '.local/bin' ~/.zprofile 2> /dev/null; then
     echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zprofile
@@ -402,14 +402,20 @@ group_ai_tools() {
 install_group "AI Tools" "$OPT_AI_TOOLS" group_ai_tools
 
 # -------------------------------------------------
-echo
-echo "=================================="
-echo " Bootstrap completed successfully "
-echo "=================================="
-echo
-echo "Next steps:"
-echo "- Set a Git username and e-mail"
-echo "  git config --global user.name \"Mona Lisa\""
-echo "- git config --global user.email \"YOUR_EMAIL\""
-echo "- Login to GitHub: gh auth login"
 
+cat <<'EOF'
+
+==================================
+ Bootstrap completed successfully
+==================================
+
+Next steps:
+  - Set a Git username and e-mail
+      git config --global user.name "Mona Lisa"
+      git config --global user.email YOUR_EMAIL
+  - Login to GitHub: gh auth login
+  - Setup rtk
+      rtk init -g            # Claude Code / Copilot (default)
+      rtk init -g --codex    # Codex (OpenAI)
+      rtk init -g --agent pi # Pi
+EOF

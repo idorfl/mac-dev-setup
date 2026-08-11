@@ -232,6 +232,7 @@ Options:
   --languages     Install Python and Rust
   --ai-tools      Install AI tools (omlx, ollama, codex, claude-code, opencode)
   --vscode        Install VS Code and extensions
+  --all           Install everything
 
 Groups are additive. Without the options the following is installed by default:
   ~/.vimrc
@@ -381,8 +382,10 @@ group_ai_tools() {
   brew_install "apfel"
 
   if ! check_brew "omlx"; then
-    brew tap jundot/omlx https://github.com/jundot/omlx
-    brew trust jundot/omlx
+    if [[ "$CHECK_ONLY" == false ]]; then
+      brew tap jundot/omlx https://github.com/jundot/omlx
+      brew trust jundot/omlx
+    fi
   fi
   brew_install "omlx"
 
@@ -411,7 +414,7 @@ cat <<'EOF'
 
 Next steps:
   - Set a Git username and e-mail
-      git config --global user.name "Mona Lisa"
+      git config --global user.name "Your Name"
       git config --global user.email YOUR_EMAIL
   - Login to GitHub: gh auth login
   - Setup rtk

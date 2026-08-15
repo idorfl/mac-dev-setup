@@ -224,7 +224,7 @@ Usage: mac_setup.sh [OPTIONS]
 
 Bootstrap a macOS development environment on Apple Silicon.
 The packages are installed from Homebrew where possible.
-Python is installed via uv.
+Python is installed via uv. RUST is installed via rustup.
 
 Options:
   --help, -h      Show this help message and exit
@@ -258,6 +258,15 @@ echo
 if [[ $(uname -m) != "arm64" ]]; then
   echo "This script supports only Apple Silicon"
   echo
+  exit 1
+fi
+
+# -------------------------------------------------
+# Check $HOME
+# -------------------------------------------------
+
+if [[ -z "${HOME:-}" ]]; then
+  echo "Error: \$HOME is not set" >&2
   exit 1
 fi
 
